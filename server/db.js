@@ -1,9 +1,6 @@
 const pg = require('pg');
-const client = new pg.Client(precess.env.DATABASE_URL || 'postgress://localhost/acme_vacations_db');
-module.exports = { 
-    client,
-    createTables
- };
+const client = new pg.Client(process.env.DATABASE_URL || 'postgress://localhost/acme_vacations_db');
+const uuid = require('uuid');
 
 const createTables = async() => {
     const SQL = `
@@ -29,3 +26,76 @@ const createTables = async() => {
     await client.query(SQL);
 };
 
+const createUser = async(name) => {
+    const SQL = `
+        INSERT INTO users(id, name) VALUES($1, $2)
+        RETURNING *
+        `;
+    const response = await client.query(SQL, [uuid.v4(), name]);
+    return response.rows[0];
+};
+
+const createPlace = async(name) => {
+    const SQL = `
+        INSERT INTO places(id, name) VALUES($1, $2)
+        RETURNING *
+        `;
+    const response = await client.query(SQL, [uuid.v4(), name]);
+    return response.rows[0];
+};
+
+const createVacation = async( user_id, place_id, departure_date ) => {
+    const SQL = `
+        INSERT INTO vacations(id, user_id, place_id, departure_date) VALUES($1, $2, $3, $4)
+        RETURNING *
+        `;
+    const response = await client.query(SQL, [uuid.v4(), user_id, place_id, departure_date]);
+    return response.rows[0];
+};
+
+const fetchUsers = async() => {
+    const SQL = `
+        SELECT *
+        FROM users
+        `;
+    const response = await client.query(SQL);
+    return response.rows;
+};
+
+const fetchPlaces = async() => {
+    const SQL = `
+        SELECT *
+        FROM places
+        `;
+    const response = await client.query(SQL);
+    return response.rows;
+};
+
+const fetchVacations = async() => {
+    const SQL = `
+        SELECT *
+        FROM vacations
+        `;
+    const response = await client.query(SQL);
+    return response.rows;
+};
+
+const destroyVacation = async(id) => {
+    const SQL = `
+        DELETE FROM vacations
+        WHERE id = $1
+        `;
+    await client.query(SQL, [id]);
+};
+
+module.exports = { 
+    client,
+    createTables,
+    createUser,
+    createPlace, 
+    fetchUsers,
+    fetchPlaces,
+    createVacation,
+    fetchVacations,
+    destroyVacation
+ };
